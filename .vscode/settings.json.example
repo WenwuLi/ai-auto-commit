@@ -1,0 +1,29 @@
+{
+  // AI Auto Commit 插件配置示例
+  
+  // AI 服务提供商：openai, anthropic, custom
+  "aiCommit.apiProvider": "openai",
+  
+  // AI API 密钥（建议使用密钥管理工具，不要直接提交到代码库）
+  "aiCommit.apiKey": "your-api-key-here",
+  
+  // 自定义 API 端点（仅当 apiProvider 为 custom 时使用）
+  "aiCommit.apiEndpoint": "",
+  
+  // AI 模型名称
+  // OpenAI 示例：gpt-3.5-turbo, gpt-4, gpt-4-turbo-preview
+  // Anthropic 示例：claude-3-opus-20240229, claude-3-sonnet-20240229
+  "aiCommit.model": "gpt-3.5-turbo",
+  
+  // 自定义提示词模板（使用 {diff} 作为代码变更的占位符）
+  "aiCommit.customPrompt": "",
+  
+  // 最大生成 token 数
+  "aiCommit.maxTokens": 200,
+  
+  // AI 生成温度（0-2，值越高越随机）
+  "aiCommit.temperature": 0.7,
+  
+  // 提交信息格式类型：conventional, simple, custom
+  "aiCommit.commitType": "conventional"
+}

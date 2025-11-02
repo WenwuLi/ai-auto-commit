@@ -1,0 +1,98 @@
+{
+  "name": "ai-auto-commit",
+  "displayName": "AI Auto Commit",
+  "description": "使用 AI 自动生成高质量的 Git 提交信息",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.74.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onCommand:ai-commit.generate"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "ai-commit.generate",
+        "title": "生成 AI 提交信息"
+      },
+      {
+        "command": "ai-commit.config",
+        "title": "配置 AI 提交"
+      }
+    ],
+    "configuration": {
+      "title": "AI Auto Commit",
+      "properties": {
+        "aiCommit.apiProvider": {
+          "type": "string",
+          "enum": [
+            "openai",
+            "anthropic",
+            "custom"
+          ],
+          "default": "openai",
+          "description": "AI 服务提供商"
+        },
+        "aiCommit.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "AI API 密钥（建议使用密钥管理）"
+        },
+        "aiCommit.apiEndpoint": {
+          "type": "string",
+          "default": "",
+          "description": "自定义 API 端点（仅当 apiProvider 为 custom 时使用）"
+        },
+        "aiCommit.model": {
+          "type": "string",
+          "default": "gpt-3.5-turbo",
+          "description": "AI 模型名称"
+        },
+        "aiCommit.customPrompt": {
+          "type": "string",
+          "default": "",
+          "description": "自定义提示词模板（留空使用默认）"
+        },
+        "aiCommit.maxTokens": {
+          "type": "number",
+          "default": 200,
+          "description": "最大生成 token 数"
+        },
+        "aiCommit.temperature": {
+          "type": "number",
+          "default": 0.7,
+          "minimum": 0,
+          "maximum": 2,
+          "description": "AI 生成温度（0-2）"
+        },
+        "aiCommit.commitType": {
+          "type": "string",
+          "enum": [
+            "conventional",
+            "simple",
+            "custom"
+          ],
+          "default": "conventional",
+          "description": "提交信息格式类型"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "devDependencies": {
+    "@types/node": "^18.0.0",
+    "@types/vscode": "^1.74.0",
+    "typescript": "^4.9.4"
+  },
+  "dependencies": {
+    "axios": "^1.6.0"
+  }
+}
