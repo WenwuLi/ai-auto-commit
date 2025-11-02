@@ -1,39 +1,64 @@
-# ai-auto-commit
+# AI Auto Commit
 
-#### 介绍
-{**以下是 Gitee 平台说明，您可以替换此简介**
-Gitee 是 OSCHINA 推出的基于 Git 的代码托管平台（同时支持 SVN）。专为开发者提供稳定、高效、安全的云端软件开发协作平台
-无论是个人、团队、或是企业，都能够用 Gitee 实现代码托管、项目管理、协作开发。企业项目请看 [https://gitee.com/enterprises](https://gitee.com/enterprises)}
+一个 VS Code/Cursor 插件，使用 AI 自动生成高质量的 Git 提交信息。
 
-#### 软件架构
-软件架构说明
+## 功能特性
 
+- 🤖 **AI 生成提交信息**：自动分析代码变更，生成规范的提交信息
+- 🎯 **多种 AI 模型支持**：支持 OpenAI、Anthropic 等主流 AI 服务
+- ✏️ **自定义提示词**：支持自定义提示词模板，适配团队规范
+- 🔒 **安全可靠**：支持配置 API 密钥，数据安全可控
+- 📝 **多种提交格式**：支持 Conventional Commits、简单格式等
+- ⚙️ **灵活配置**：支持全局和项目级别配置
 
-#### 安装教程
+## 安装
 
-1.  xxxx
-2.  xxxx
-3.  xxxx
+1. 克隆或下载此项目
+2. 运行 `npm install` 安装依赖
+3. 按 `F5` 启动调试模式，或运行 `vsce package` 打包插件
 
-#### 使用说明
+## 配置
 
-1.  xxxx
-2.  xxxx
-3.  xxxx
+在 VS Code 设置中配置：
 
-#### 参与贡献
+- `aiCommit.apiProvider`: AI 服务提供商（openai/anthropic/custom）
+- `aiCommit.apiKey`: API 密钥
+- `aiCommit.model`: 模型名称
+- `aiCommit.customPrompt`: 自定义提示词
+- `aiCommit.commitType`: 提交信息格式
 
-1.  Fork 本仓库
-2.  新建 Feat_xxx 分支
-3.  提交代码
-4.  新建 Pull Request
+## 使用
 
+### 基本使用流程
 
-#### 特技
+1. **修改代码** - 在 Git 工作区中修改代码文件
+2. **暂存文件** - 使用 `git add` 暂存要提交的文件
+3. **生成提交信息** - 打开命令面板（Ctrl+Shift+P / Cmd+Shift+P），运行 `生成 AI 提交信息` 命令
+4. **确认提交** - 查看生成的提交信息，选择：
+   - "使用此提交信息" - 直接提交
+   - "编辑后提交" - 编辑后再提交
+   - "取消" - 不提交
 
-1.  使用 Readme\_XXX.md 来支持不同的语言，例如 Readme\_en.md, Readme\_zh.md
-2.  Gitee 官方博客 [blog.gitee.com](https://blog.gitee.com)
-3.  你可以 [https://gitee.com/explore](https://gitee.com/explore) 这个地址来了解 Gitee 上的优秀开源项目
-4.  [GVP](https://gitee.com/gvp) 全称是 Gitee 最有价值开源项目，是综合评定出的优秀开源项目
-5.  Gitee 官方提供的使用手册 [https://gitee.com/help](https://gitee.com/help)
-6.  Gitee 封面人物是一档用来展示 Gitee 会员风采的栏目 [https://gitee.com/gitee-stars/](https://gitee.com/gitee-stars/)
+### 配置步骤
+
+1. 打开 VS Code 设置（Ctrl+, / Cmd+,）
+2. 搜索 "AI Auto Commit"
+3. 配置以下必要项：
+   - `AI Commit: Api Provider` - 选择 AI 服务提供商
+   - `AI Commit: Api Key` - 输入 API 密钥
+   - `AI Commit: Model` - 输入模型名称
+4. （可选）配置高级选项：
+   - `AI Commit: Custom Prompt` - 自定义提示词
+   - `AI Commit: Commit Type` - 提交格式类型
+
+## 开发
+
+```bash
+npm install
+npm run compile
+npm run watch
+```
+
+## 许可证
+
+MIT
