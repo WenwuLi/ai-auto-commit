@@ -17,11 +17,21 @@
     "commands": [
       {
         "command": "ai-commit.generate",
-        "title": "生成 AI 提交信息"
+        "title": "生成 AI 提交信息",
+        "category": "AI Commit"
       },
       {
         "command": "ai-commit.config",
-        "title": "配置 AI 提交"
+        "title": "配置 AI 提交",
+        "category": "AI Commit"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "ai-commit.generate",
+        "key": "ctrl+h ctrl+h",
+        "mac": "cmd+h cmd+h",
+        "when": "editorTextFocus || !editorTextFocus"
       }
     ],
     "configuration": {
@@ -30,17 +40,18 @@
         "aiCommit.apiProvider": {
           "type": "string",
           "enum": [
+            "cursor",
             "openai",
             "anthropic",
             "custom"
           ],
-          "default": "openai",
-          "description": "AI 服务提供商"
+          "default": "cursor",
+          "description": "AI 服务提供商。在 Cursor 中建议使用 'cursor' 以使用内置 AI（无需配置 API 密钥）"
         },
         "aiCommit.apiKey": {
           "type": "string",
           "default": "",
-          "description": "AI API 密钥（建议使用密钥管理）"
+          "description": "AI API 密钥（使用 cursor 提供商时不需要配置，其他提供商需要）"
         },
         "aiCommit.apiEndpoint": {
           "type": "string",

@@ -20,7 +20,11 @@
       "problemMatcher": "$tsc",
       "group": {
         "kind": "build",
-        "isDefault": true
+        "isDefault": false
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
       }
     }
   ]

@@ -14,12 +14,45 @@ function getCommitType(config: vscode.WorkspaceConfiguration): CommitType {
 }
 
 /**
+ * 检测是否在 Cursor 环境中运行
+ */
+function isCursorEnvironment(): boolean {
+  const appName = typeof vscode.env.appName === 'string' ? vscode.env.appName.toLowerCase() : '';
+  const cursorEnv = process.env.CURSOR === '1' || process.env.CURSOR === 'true';
+  const vscodeCursorEnv = process.env.VSCODE_CURSOR === '1' || process.env.VSCODE_CURSOR === 'true';
+  const hasCursorInName = appName.includes('cursor');
+  const isNotVSCode = appName.length > 0 && appName !== 'visual studio code';
+  
+  return cursorEnv || vscodeCursorEnv || hasCursorInName || isNotVSCode;
+}
+
+/**
  * 验证并获取 API Provider 配置
  */
-function getApiProvider(config: vscode.WorkspaceConfiguration): 'openai' | 'anthropic' | 'custom' {
-  const value = config.get<string>('apiProvider', 'openai');
-  const validProviders: Array<'openai' | 'anthropic' | 'custom'> = ['openai', 'anthropic', 'custom'];
-  return validProviders.includes(value as any) ? (value as 'openai' | 'anthropic' | 'custom') : 'openai';
+function getApiProvider(config: vscode.WorkspaceConfiguration): 'openai' | 'anthropic' | 'custom' | 'cursor' {
+  const value = config.get<string>('apiProvider', '');
+  const validProviders: Array<'openai' | 'anthropic' | 'custom' | 'cursor'> = ['openai', 'anthropic', 'custom', 'cursor'];
+  
+  // 如果在 Cursor 环境中且未配置 provider，默认使用 cursor
+  if (isCursorEnvironment() && (!value || value === '')) {
+    return 'cursor';
+  }
+  
+  return validProviders.includes(value as any) ? (value as 'openai' | 'anthropic' | 'custom' | 'cursor') : 'openai';
+}
+
+/**
+ * 显示 Cursor AI 不可用的提示消息
+ */
+function showCursorAIUnavailableMessage(): void {
+  vscode.window.showInformationMessage(
+    '无法直接调用 Cursor 内置 AI。建议使用 Cursor 内置的 Git 提交功能（在 Git 侧边栏点击 ✨ 图标），或在设置中配置 aiCommit.apiKey 使用其他 AI 提供商。',
+    '打开设置'
+  ).then((action) => {
+    if (action === '打开设置') {
+      vscode.commands.executeCommand('workbench.action.openSettings', '@ext:ai-auto-commit');
+    }
+  });
 }
 
 /**
@@ -80,69 +113,38 @@ export function activate(context: vscode.ExtensionContext) {
 
             // 4. 调用 AI 生成提交信息
             const apiProvider = getApiProvider(config);
-            const commitMessage = await aiService.generateCommitMessage(prompt, {
-              provider: apiProvider,
-              apiKey: config.get<string>('apiKey', ''),
-              apiEndpoint: config.get<string>('apiEndpoint', ''),
-              model: config.get<string>('model', 'gpt-3.5-turbo'),
-              maxTokens: config.get<number>('maxTokens', 200),
-              temperature: config.get<number>('temperature', 0.7),
-            });
-
-            if (!commitMessage) {
-              vscode.window.showErrorMessage('AI 生成提交信息失败，请检查配置');
+            const apiKey = config.get<string>('apiKey', '');
+            
+            // 如果在 Cursor 环境中且未配置 API 密钥，尝试使用 Cursor 内置 AI
+            const useCursorAI = isCursorEnvironment() && (!apiKey || apiKey === '') && apiProvider !== 'openai' && apiProvider !== 'anthropic' && apiProvider !== 'custom';
+            
+            let commitMessage: string | null = null;
+            try {
+              commitMessage = await aiService.generateCommitMessage(prompt, {
+                provider: useCursorAI ? 'cursor' : apiProvider,
+                apiKey: apiKey,
+                apiEndpoint: config.get<string>('apiEndpoint', ''),
+                model: config.get<string>('model', 'gpt-3.5-turbo'),
+                maxTokens: config.get<number>('maxTokens', 200),
+                temperature: config.get<number>('temperature', 0.7),
+              });
+            } catch (error) {
+              const errorMessage = error instanceof Error ? error.message : '未知错误';
+              // 如果在 Cursor 环境中且使用 cursor provider，给出更友好的提示
+              if (useCursorAI && isCursorEnvironment()) {
+                showCursorAIUnavailableMessage();
+              } else {
+                vscode.window.showErrorMessage(`AI 生成提交信息失败：${errorMessage}`);
+              }
               return;
             }
 
             progress.report({ increment: 80, message: '处理提交信息...' });
 
             // 5. 清理和格式化提交信息
-            const formattedMessage = commitService.formatCommitMessage(commitMessage);
+            const formattedMessage = commitService.formatCommitMessage(commitMessage || '');
 
             progress.report({ increment: 100, message: '完成' });
-
-            // 6. 显示提交信息供用户确认
-            // 先显示提交信息预览
-            const previewDoc = await vscode.workspace.openTextDocument({
-              content: formattedMessage,
-              language: 'plaintext',
-            });
-            await vscode.window.showTextDocument(previewDoc, { preview: true });
-
-            // 显示操作选项
-            const action = await vscode.window.showInformationMessage(
-              `已生成提交信息，请查看编辑器预览。`,
-              '使用此提交信息',
-              '编辑后提交',
-              '取消'
-            );
-
-            if (action === '使用此提交信息') {
-              await commitService.commit(formattedMessage);
-              vscode.window.showInformationMessage('提交成功！');
-            } else if (action === '编辑后提交') {
-              // 获取预览文档的当前内容（用户可能已经编辑过）
-              const currentContent = previewDoc.getText();
-              const editedMessage = await vscode.window.showInputBox({
-                prompt: '编辑提交信息（或直接在编辑器中修改后关闭）',
-                value: currentContent,
-                validateInput: (text) => {
-                  if (text.trim().length === 0) {
-                    return '提交信息不能为空';
-                  }
-                  return null;
-                },
-              });
-
-              if (editedMessage) {
-                await commitService.commit(editedMessage);
-                // 关闭预览文档
-                await vscode.window.showTextDocument(previewDoc).then(
-                  () => vscode.commands.executeCommand('workbench.action.closeActiveEditor')
-                );
-                vscode.window.showInformationMessage('提交成功！');
-              }
-            }
           }
         );
       } catch (error) {
