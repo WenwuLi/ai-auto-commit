@@ -11,28 +11,7 @@
       "outFiles": [
         "${workspaceFolder}/out/**/*.js"
       ],
-      "preLaunchTask": "${defaultBuildTask}",
-      "console": "integratedTerminal",
-      "sourceMaps": true,
-      "skipFiles": [
-        "<node_internals>/**"
-      ]
-    },
-    {
-      "name": "运行扩展（不编译）",
-      "type": "extensionHost",
-      "request": "launch",
-      "args": [
-        "--extensionDevelopmentPath=${workspaceFolder}"
-      ],
-      "outFiles": [
-        "${workspaceFolder}/out/**/*.js"
-      ],
-      "console": "integratedTerminal",
-      "sourceMaps": true,
-      "skipFiles": [
-        "<node_internals>/**"
-      ]
+      "preLaunchTask": "${defaultBuildTask}"
     }
   ]
 }

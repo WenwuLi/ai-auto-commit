@@ -33,13 +33,33 @@
 
 在 VS Code 设置中配置：
 
-- `aiCommit.apiProvider`: AI 服务提供商（cursor/openai/anthropic/custom）
-  - 在 Cursor 中建议使用 `cursor`（默认，无需 API 密钥）
-  - 在其他编辑器中使用 `openai`、`anthropic` 或 `custom`
-- `aiCommit.apiKey`: API 密钥（使用 cursor 提供商时不需要）
-- `aiCommit.model`: 模型名称
-- `aiCommit.customPrompt`: 自定义提示词
-- `aiCommit.commitType`: 提交信息格式
+#### 必填配置（使用 openai/anthropic/custom 时）
+
+- `aiCommit.apiProvider` **[必填]**：AI 服务提供商
+  - 可选值：`openai`、`anthropic`、`custom`
+  - 默认值：`openai`（如果未配置）
+- `aiCommit.apiKey` **[必填]**：API 密钥
+  - 使用 `openai` 或 `anthropic` 时必须配置
+  - 使用 `custom` 时根据自定义接口要求配置
+
+#### 可选配置
+
+- `aiCommit.model` **[可选]**：模型名称
+  - 默认值：`gpt-3.5-turbo`
+  - 示例：`gpt-4`、`claude-3-opus` 等
+- `aiCommit.customPrompt` **[可选]**：自定义提示词
+  - 默认值：空（使用内置提示词模板）
+  - 用于自定义提交信息的生成规则
+- `aiCommit.commitType` **[可选]**：提交信息格式
+  - 可选值：`conventional`（Conventional Commits）、`simple`（简单格式）、`custom`（自定义）
+  - 默认值：`conventional`
+
+#### 在 Cursor 中使用
+
+在 Cursor 中，所有配置均为 **[非必填]**：
+- 插件会自动检测 Cursor 环境并使用内置 AI（`cursor` provider）
+- 无需配置 `apiProvider` 和 `apiKey` 即可使用
+- 如需使用其他 AI 提供商，可按照上述必填配置进行设置
 
 ## 使用
 
