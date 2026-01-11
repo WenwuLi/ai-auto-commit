@@ -3,6 +3,11 @@
   "displayName": "AI Auto Commit",
   "description": "使用 AI 自动生成高质量的 Git 提交信息",
   "version": "0.0.1",
+  "icon": "src/assets/COTC_icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/WenwuLi/ai-auto-commit.git"
+  },
   "engines": {
     "vscode": "^1.74.0"
   },
@@ -96,11 +101,13 @@
   "scripts": {
     "vscode:prepublish": "npm run compile",
     "compile": "tsc -p ./",
-    "watch": "tsc -watch -p ./"
+    "watch": "tsc -watch -p ./",
+    "build": "npm run compile && node -e \"require('fs').mkdirSync('release', {recursive: true})\" && npx vsce package --out ./release"
   },
   "devDependencies": {
     "@types/node": "^18.0.0",
     "@types/vscode": "^1.74.0",
+    "@vscode/vsce": "^2.22.0",
     "typescript": "^4.9.4"
   },
   "dependencies": {

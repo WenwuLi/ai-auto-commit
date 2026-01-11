@@ -104,11 +104,85 @@
 
 ## 开发
 
-```bash
-npm install
-npm run compile
-npm run watch
+### 环境要求
+
+- Node.js >= 18.0.0
+- npm 或 yarn
+- VS Code 或 Cursor（用于开发和调试）
+
+### 开发步骤
+
+1. **克隆项目**
+   ```bash
+   git clone <repository-url>
+   cd ai-auto-commit
+   ```
+
+2. **安装依赖**
+   ```bash
+   npm install
+   ```
+
+3. **编译项目**
+   ```bash
+   npm run compile
+   ```
+   这将 TypeScript 代码编译到 `out/` 目录。
+
+4. **启动监听模式**（可选）
+   ```bash
+   npm run watch
+   ```
+   在开发时，此命令会监听文件变化并自动重新编译。
+
+5. **调试插件**
+   - 按 `F5` 启动调试模式
+   - 这会打开一个新的 VS Code/Cursor 窗口（扩展开发宿主）
+   - 在新窗口中测试插件功能
+   - 在原始窗口中查看调试日志和断点
+
+6. **打包插件**
+   ```bash
+   # 安装打包工具（如果未安装）
+   npm install -g @vscode/vsce
+   
+   # 方式1：使用 build 命令（推荐）
+   npm run build
+   # 这会编译代码并打包到 release/ 目录
+   
+   # 方式2：手动打包
+   vsce package
+   # 打包后会生成 `.vsix` 文件到当前目录
+   ```
+   
+   **说明**：
+   - `npm run build` 会自动编译 TypeScript 代码，然后打包插件到 `release/` 目录
+   - 打包后会生成 `ai-auto-commit-<version>.vsix` 文件
+   - 可以通过 VS Code 的扩展面板安装 `.vsix` 文件（扩展面板 → 三个点 → 从 VSIX 安装）
+
+### 项目结构
+
 ```
+ai-auto-commit/
+├── src/                    # 源代码目录
+│   ├── extension.ts        # 插件入口文件
+│   └── services/          # 服务模块
+│       ├── gitService.ts      # Git 服务
+│       ├── aiService.ts       # AI 服务
+│       ├── promptService.ts   # 提示词服务
+│       └── commitService.ts   # 提交服务
+├── out/                   # 编译输出目录
+├── package.json           # 插件配置和依赖
+├── tsconfig.json          # TypeScript 配置
+└── README.md             # 项目说明文档
+```
+
+### 开发注意事项
+
+- 修改代码后需要重新编译（`npm run compile`）或使用监听模式（`npm run watch`）
+- 调试时需要在新的扩展开发宿主窗口中测试，而不是在原始窗口
+- 查看调试日志：在调试控制台中查看 `[AI Commit]` 和 `[AI Service]` 开头的日志
+- 快捷键配置在 `package.json` 的 `keybindings` 字段中
 
 ## 许可证
 
