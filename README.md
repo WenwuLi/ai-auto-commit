@@ -1,4 +1,4 @@
-# AI Auto Commit
+# COTC AI Auto Commit
 
 一个 VS Code/Cursor 插件，使用 AI 自动生成高质量的 Git 提交信息。
 
@@ -10,12 +10,18 @@
 - 🔒 **安全可靠**：支持配置 API 密钥，数据安全可控
 - 📝 **多种提交格式**：支持 Conventional Commits、简单格式等
 - ⚙️ **灵活配置**：支持全局和项目级别配置
+- ⚡ **快捷操作**：支持快捷键快速生成和提交
 
 ## 安装
 
-1. 克隆或下载此项目
-2. 运行 `npm install` 安装依赖
-3. 按 `F5` 启动调试模式，或运行 `vsce package` 打包插件
+### 从 VS Code Marketplace 安装（推荐）
+
+1. 打开 VS Code 或 Cursor
+2. 按 `Ctrl+Shift+X`（Windows/Linux）或 `Cmd+Shift+X`（macOS）打开扩展面板
+3. 搜索 "COTC AI Auto Commit"
+4. 点击 "Install" 安装
+
+或者直接访问：[Marketplace 链接](https://marketplace.visualstudio.com/items?itemName=menmou.cotc-ai-auto-commit)
 
 ## 配置
 
@@ -67,15 +73,25 @@
 
 1. **修改代码** - 在 Git 工作区中修改代码文件
 2. **暂存文件** - 使用 `git add` 暂存要提交的文件
-3. **生成提交信息** - 按快捷键 `Ctrl+H Ctrl+H`（Windows/Linux）或 `Cmd+H Cmd+H`（macOS），或打开命令面板（Ctrl+Shift+P / Cmd+Shift+P），运行 `生成 AI 提交信息` 命令
-4. **确认提交** - 查看生成的提交信息，选择：
+3. **生成提交信息** - 有两种方式：
+   - **方式1（仅生成）**：按快捷键 `Ctrl+H Ctrl+H`（Windows/Linux）或 `Cmd+H Cmd+H`（macOS）
+   - **方式2（生成并提交）**：按快捷键 `Ctrl+M Ctrl+M`（Windows/Linux）或 `Cmd+M Cmd+M`（macOS）
+   - 或打开命令面板（`Ctrl+Shift+P` / `Cmd+Shift+P`），运行：
+     - `生成 AI 提交信息` - 仅生成提交信息
+     - `生成 AI 提交信息并提交` - 生成后询问是否提交
+4. **确认提交**（使用方式2时）：
    - "使用此提交信息" - 直接提交
    - "编辑后提交" - 编辑后再提交
    - "取消" - 不提交
 
-### 自定义快捷键
+### 快捷键说明
 
-如果你想修改默认快捷键 `Ctrl+H Ctrl+H`：
+- `Ctrl+H Ctrl+H` / `Cmd+H Cmd+H`：生成 AI 提交信息（仅生成，不提交）
+- `Ctrl+M Ctrl+M` / `Cmd+M Cmd+M`：生成 AI 提交信息并询问是否提交
+
+**自定义快捷键**：
+
+如果你想修改默认快捷键：
 
 1. 打开键盘快捷键设置：
    - Windows/Linux: `Ctrl+K Ctrl+S`
@@ -84,105 +100,34 @@
 3. 双击该命令，按下你想要的新快捷键组合
 4. 按 `Enter` 确认
 
-### 配置步骤
+## 常见问题
 
-#### 在 Cursor 中（推荐）
-1. 安装插件后即可直接使用，无需配置！
-2. 插件会自动使用 Cursor 内置 AI
-3. 默认快捷键：`Ctrl+H Ctrl+H`（可在键盘快捷键设置中修改）
+### Q: 在 Cursor 中使用需要配置 API 密钥吗？
+A: 不需要！在 Cursor 中，插件会自动使用 Cursor 内置 AI，无需任何配置即可使用。
 
-#### 在 VS Code 或其他编辑器中
-1. 打开 VS Code 设置（Ctrl+, / Cmd+,）
-2. 搜索 "AI Auto Commit"
-3. 配置以下必要项：
-   - `AI Commit: Api Provider` - 选择 AI 服务提供商（openai/anthropic/custom）
-   - `AI Commit: Api Key` - 输入 API 密钥
-   - `AI Commit: Model` - 输入模型名称（如 gpt-3.5-turbo）
-4. （可选）配置高级选项：
-   - `AI Commit: Custom Prompt` - 自定义提示词
-   - `AI Commit: Commit Type` - 提交格式类型
+### Q: 如何修改提交信息格式？
+A: 在设置中搜索 "AI Commit: Commit Type"，可以选择：
+- `conventional` - Conventional Commits 格式（推荐）
+- `simple` - 简单格式
+- `custom` - 自定义格式
 
-## 开发
+### Q: 支持哪些 AI 服务？
+A: 目前支持：
+- **Cursor 内置 AI**（在 Cursor 中使用，无需配置）
+- **OpenAI**（需要 API 密钥）
+- **Anthropic (Claude)**（需要 API 密钥）
+- **自定义 API**（需要配置 API 端点和密钥）
 
-### 环境要求
+### Q: 生成的提交信息不符合要求怎么办？
+A: 你可以：
+1. 使用 `Ctrl+M Ctrl+M` 生成后选择 "编辑后提交" 进行修改
+2. 在设置中配置自定义提示词（`AI Commit: Custom Prompt`）来调整生成规则
 
-- Node.js >= 18.0.0
-- npm 或 yarn
-- VS Code 或 Cursor（用于开发和调试）
-
-### 开发步骤
-
-1. **克隆项目**
-   ```bash
-   git clone <repository-url>
-   cd ai-auto-commit
-   ```
-
-2. **安装依赖**
-   ```bash
-   npm install
-   ```
-
-3. **编译项目**
-   ```bash
-   npm run compile
-   ```
-   这将 TypeScript 代码编译到 `out/` 目录。
-
-4. **启动监听模式**（可选）
-   ```bash
-   npm run watch
-   ```
-   在开发时，此命令会监听文件变化并自动重新编译。
-
-5. **调试插件**
-   - 按 `F5` 启动调试模式
-   - 这会打开一个新的 VS Code/Cursor 窗口（扩展开发宿主）
-   - 在新窗口中测试插件功能
-   - 在原始窗口中查看调试日志和断点
-
-6. **打包插件**
-   ```bash
-   # 安装打包工具（如果未安装）
-   npm install -g @vscode/vsce
-   
-   # 方式1：使用 build 命令（推荐）
-   npm run build
-   # 这会编译代码并打包到 release/ 目录
-   
-   # 方式2：手动打包
-   vsce package
-   # 打包后会生成 `.vsix` 文件到当前目录
-   ```
-   
-   **说明**：
-   - `npm run build` 会自动编译 TypeScript 代码，然后打包插件到 `release/` 目录
-   - 打包后会生成 `ai-auto-commit-<version>.vsix` 文件
-   - 可以通过 VS Code 的扩展面板安装 `.vsix` 文件（扩展面板 → 三个点 → 从 VSIX 安装）
-
-### 项目结构
-
-```
-ai-auto-commit/
-├── src/                    # 源代码目录
-│   ├── extension.ts        # 插件入口文件
-│   └── services/          # 服务模块
-│       ├── gitService.ts      # Git 服务
-│       ├── aiService.ts       # AI 服务
-│       ├── promptService.ts   # 提示词服务
-│       └── commitService.ts   # 提交服务
-├── out/                   # 编译输出目录
-├── package.json           # 插件配置和依赖
-├── tsconfig.json          # TypeScript 配置
-└── README.md             # 项目说明文档
-```
-
-### 开发注意事项
-
-- 修改代码后需要重新编译（`npm run compile`）或使用监听模式（`npm run watch`）
-- 调试时需要在新的扩展开发宿主窗口中测试，而不是在原始窗口
-- 查看调试日志：在调试控制台中查看 `[AI Commit]` 和 `[AI Service]` 开头的日志
-- 快捷键配置在 `package.json` 的 `keybindings` 字段中
+### Q: 快捷键冲突怎么办？
+A: 可以在键盘快捷键设置中修改：
+1. 按 `Ctrl+K Ctrl+S`（Windows/Linux）或 `Cmd+K Cmd+S`（macOS）
+2. 搜索 "COTC AI Auto Commit" 相关命令
+3. 修改为你喜欢的快捷键组合
 
 ## 许可证
 

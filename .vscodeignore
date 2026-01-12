@@ -2,7 +2,9 @@
 .vscode-test/**
 src/**
 !src/assets/**
+docs/**
 tsconfig.json
 .gitignore
 *.md
 *.map
+README.md

@@ -1,8 +1,9 @@
 {
-  "name": "ai-auto-commit",
-  "displayName": "AI Auto Commit",
+  "name": "cotc-ai-auto-commit",
+  "displayName": "COTC AI Auto Commit",
   "description": "使用 AI 自动生成高质量的 Git 提交信息",
-  "version": "0.0.1",
+  "version": "0.0.2",
+  "publisher": "menmou",
   "icon": "src/assets/COTC_icon.png",
   "repository": {
     "type": "git",
