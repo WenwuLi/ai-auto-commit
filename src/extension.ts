@@ -1,35 +1,8 @@
 import * as vscode from "vscode";
 import { GitService } from "./services/gitService";
-import { AIService } from "./services/aiService";
-import { PromptService, CommitType } from "./services/promptService";
-
-/**
- * 验证并获取 CommitType 配置
- */
-function getCommitType(config: vscode.WorkspaceConfiguration): CommitType {
-  const value = config.get<string>("commitType", "conventional");
-  const validTypes: CommitType[] = ["conventional", "simple", "custom"];
-  return validTypes.includes(value as CommitType)
-    ? (value as CommitType)
-    : "conventional";
-}
-
-/**
- * 检测是否在 Cursor 环境中运行
- */
-function isCursorEnvironment(): boolean {
-  const appName =
-    typeof vscode.env.appName === "string"
-      ? vscode.env.appName.toLowerCase()
-      : "";
-  const cursorEnv = process.env.CURSOR === "1" || process.env.CURSOR === "true";
-  const vscodeCursorEnv =
-    process.env.VSCODE_CURSOR === "1" || process.env.VSCODE_CURSOR === "true";
-  const hasCursorInName = appName.includes("cursor");
-  const isNotVSCode = appName.length > 0 && appName !== "visual studio code";
-
-  return cursorEnv || vscodeCursorEnv || hasCursorInName || isNotVSCode;
-}
+import { AIService, isCursorEnvironment } from "./services/aiService";
+import { PromptService } from "./services/promptService";
+import { CursorRulesService } from "./services/cursorRulesService";
 
 /**
  * 验证并获取 API Provider 配置
@@ -56,25 +29,6 @@ function getApiProvider(
 }
 
 /**
- * 显示 Cursor AI 不可用的提示消息
- */
-function showCursorAIUnavailableMessage(): void {
-  vscode.window
-    .showInformationMessage(
-      "无法直接调用 Cursor 内置 AI。建议使用 Cursor 内置的 Git 提交功能（在 Git 侧边栏点击 ✨ 图标），或在设置中配置 aiCommit.apiKey 使用其他 AI 提供商。",
-      "打开设置"
-    )
-    .then((action) => {
-      if (action === "打开设置") {
-        vscode.commands.executeCommand(
-          "workbench.action.openSettings",
-          "@ext:ai-auto-commit"
-        );
-      }
-    });
-}
-
-/**
  * 插件激活函数
  */
 export function activate(context: vscode.ExtensionContext) {
@@ -84,13 +38,13 @@ export function activate(context: vscode.ExtensionContext) {
   const gitService = new GitService();
   const aiService = new AIService();
   const promptService = new PromptService();
+  const cursorRulesService = new CursorRulesService();
 
   // 注册命令：生成 AI 提交信息
   const generateCommand = vscode.commands.registerCommand(
     "ai-commit.generate",
     async () => {
       try {
-        // 显示进度提示
         await vscode.window.withProgress(
           {
             location: vscode.ProgressLocation.Notification,
@@ -107,7 +61,7 @@ export function activate(context: vscode.ExtensionContext) {
               return;
             }
 
-            progress.report({ increment: 20, message: "获取代码变更..." });
+            progress.report({ increment: 10, message: "获取代码变更..." });
 
             // 2. 获取 Git diff
             const diff = await gitService.getStagedDiff();
@@ -118,81 +72,163 @@ export function activate(context: vscode.ExtensionContext) {
               return;
             }
 
-            progress.report({ increment: 40, message: "生成提示词..." });
+            progress.report({ increment: 20, message: "检查规则文件..." });
 
-            // 3. 生成提示词
-            const config = vscode.workspace.getConfiguration("aiCommit");
-            const commitType = getCommitType(config);
-            const prompt = promptService.generatePrompt(
-              diff,
-              config.get<string>("customPrompt", ""),
-              commitType
-            );
-
-            progress.report({
-              increment: 60,
-              message: "调用 AI 生成提交信息...",
-            });
-
-            // 4. 调用 AI 生成提交信息
-            const apiProvider = getApiProvider(config);
-            const apiKey = config.get<string>("apiKey", "");
-
-            // 如果在 Cursor 环境中且未配置 API 密钥，尝试使用 Cursor 内置 AI
-            const useCursorAI =
-              isCursorEnvironment() &&
-              (!apiKey || apiKey === "") &&
-              apiProvider !== "openai" &&
-              apiProvider !== "anthropic" &&
-              apiProvider !== "custom";
-
-            // 这里开始真正调用 AI 服务来生成提交信息
-            // 提前声明变量，用于接收 AI 返回的提交信息
-            let commitMessage: string | null = null;
-            try {
-              // 更新进度提示：正在让 AI 处理并生成提交信息
-              progress.report({ increment: 80, message: "处理提交信息..." });
-              commitMessage = await aiService.generateCommitMessage(prompt, {
-                // provider:
-                // - 如果在 Cursor 环境中且未配置 apiKey，则尝试使用 Cursor 内置 AI（provider 为 'cursor'）
-                // - 否则使用用户在设置中配置的 provider（openai / anthropic / custom）
-                provider: useCursorAI ? "cursor" : apiProvider,
-                // apiKey: 当使用 openai / anthropic / custom 时，需要用户在设置中配置的密钥
-                apiKey: apiKey,
-                // apiEndpoint: 自定义接口地址，主要用于 custom provider
-                apiEndpoint: config.get<string>("apiEndpoint", ""),
-                // model: 使用的模型名称，例如 gpt-3.5-turbo / gpt-4 等
-                model: config.get<string>("model", "gpt-3.5-turbo"),
-                // maxTokens: 限制 AI 返回的最大 token 数，避免回复过长
-                maxTokens: config.get<number>("maxTokens", 200),
-                // temperature: 控制生成结果的“随机性”，数值越大越有创造性、越小越保守
-                temperature: config.get<number>("temperature", 0.7),
-              });
-            } catch (error) {
-              const errorMessage =
-                error instanceof Error ? error.message : "未知错误";
-              // 如果在 Cursor 环境中且使用 cursor provider，给出更友好的提示
-              if (useCursorAI && isCursorEnvironment()) {
-                showCursorAIUnavailableMessage();
-              } else {
-                vscode.window.showErrorMessage(
-                  `AI 生成提交信息失败：${errorMessage}`
-                );
+            // 3. 检测 .cursorrules 文件
+            const hasRulesFile = await cursorRulesService.exists();
+            
+            // 如果没有规则文件，提示用户
+            if (!hasRulesFile) {
+              const result = await cursorRulesService.promptToGenerate();
+              if (result === "error") {
+                return;
               }
-              return;
+              // 如果用户选择生成，继续执行
+              // 如果用户取消，也继续执行（使用默认规则）
             }
 
-            // AI 调用成功，更新进度到 90%
-            progress.report({ increment: 10, message: "完成" });
-            
-            // 添加短暂延迟，确保用户能看到"完成"消息
-            await new Promise(resolve => setTimeout(resolve, 3000));
+            progress.report({ increment: 30, message: "准备生成提交信息..." });
+
+            // 4. 获取配置
+            const config = vscode.workspace.getConfiguration("aiCommit");
+            const apiProvider = getApiProvider(config);
+            const apiKey = config.get<string>("apiKey", "");
+            const customPrompt = config.get<string>("customPrompt", "");
+
+            // 5. 根据环境选择处理方式
+            const isCursor = isCursorEnvironment();
+            const useCursorBuiltin = isCursor && 
+              (apiProvider === "cursor" || (!apiKey && apiProvider !== "openai" && apiProvider !== "anthropic" && apiProvider !== "custom"));
+
+            if (useCursorBuiltin) {
+              // Cursor 环境：直接调用 Cursor 内置功能
+              // Cursor 会自动读取 .cursorrules 文件
+              progress.report({ increment: 50, message: "调用 Cursor AI..." });
+              
+              try {
+                const result = await aiService.generateCommitMessage("", {
+                  provider: "cursor",
+                  apiKey: "",
+                  model: "",
+                  maxTokens: 200,
+                  temperature: 0.7,
+                });
+
+                if (result === "__CURSOR_BUILTIN__") {
+                  progress.report({ increment: 20, message: "已触发 Cursor 生成" });
+                  // Cursor 内置功能会自动填充提交信息到 Git 面板
+                  return;
+                }
+              } catch (error) {
+                const errorMessage = error instanceof Error ? error.message : "未知错误";
+                vscode.window.showErrorMessage(`Cursor AI 调用失败：${errorMessage}`);
+                return;
+              }
+            } else {
+              // VS Code 环境或配置了其他 API：使用 API 调用
+              if (!apiKey) {
+                vscode.window.showErrorMessage(
+                  "请先配置 API 密钥。打开设置，搜索 'COTC' 进行配置。"
+                );
+                return;
+              }
+
+              progress.report({ increment: 40, message: "读取规则文件..." });
+
+              // 读取 .cursorrules 文件内容
+              const cursorRulesContent = await cursorRulesService.read();
+
+              progress.report({ increment: 50, message: "生成提示词..." });
+
+              // 生成提示词
+              const prompt = promptService.generatePrompt(
+                diff,
+                cursorRulesContent || undefined,
+                customPrompt || undefined
+              );
+
+              progress.report({ increment: 60, message: "调用 AI 生成提交信息..." });
+
+              try {
+                const commitMessage = await aiService.generateCommitMessage(prompt, {
+                  provider: apiProvider,
+                  apiKey: apiKey,
+                  apiEndpoint: config.get<string>("apiEndpoint", ""),
+                  model: config.get<string>("model", "gpt-3.5-turbo"),
+                  maxTokens: config.get<number>("maxTokens", 200),
+                  temperature: config.get<number>("temperature", 0.7),
+                });
+
+                if (commitMessage) {
+                  // 显示生成的提交信息
+                  const action = await vscode.window.showInformationMessage(
+                    `生成的提交信息：\n${commitMessage}`,
+                    "复制到剪贴板",
+                    "取消"
+                  );
+
+                  if (action === "复制到剪贴板") {
+                    await vscode.env.clipboard.writeText(commitMessage);
+                    vscode.window.showInformationMessage("提交信息已复制到剪贴板");
+                  }
+                } else {
+                  vscode.window.showWarningMessage("AI 未能生成提交信息，请重试");
+                }
+              } catch (error) {
+                const errorMessage = error instanceof Error ? error.message : "未知错误";
+                vscode.window.showErrorMessage(`AI 生成提交信息失败：${errorMessage}`);
+              }
+            }
+
+            progress.report({ increment: 100, message: "完成" });
           }
         );
       } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : "未知错误";
+        const errorMessage = error instanceof Error ? error.message : "未知错误";
         vscode.window.showErrorMessage(`生成提交信息失败：${errorMessage}`);
+      }
+    }
+  );
+
+  // 注册命令：生成规则文件
+  const generateRulesCommand = vscode.commands.registerCommand(
+    "ai-commit.generateRules",
+    async () => {
+      try {
+        const exists = await cursorRulesService.exists();
+        
+        if (exists) {
+          const action = await vscode.window.showWarningMessage(
+            ".cursorrules 文件已存在，是否覆盖？",
+            "覆盖",
+            "取消"
+          );
+          
+          if (action !== "覆盖") {
+            return;
+          }
+        }
+
+        const success = await cursorRulesService.generate();
+        if (success) {
+          vscode.window.showInformationMessage(
+            ".cursorrules 文件已生成！您可以根据项目需要进行修改。"
+          );
+          
+          // 打开生成的文件
+          const workspaceFolders = vscode.workspace.workspaceFolders;
+          if (workspaceFolders && workspaceFolders.length > 0) {
+            const filePath = vscode.Uri.joinPath(
+              workspaceFolders[0].uri,
+              ".cursorrules"
+            );
+            const doc = await vscode.workspace.openTextDocument(filePath);
+            await vscode.window.showTextDocument(doc);
+          }
+        }
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : "未知错误";
+        vscode.window.showErrorMessage(`生成规则文件失败：${errorMessage}`);
       }
     }
   );
@@ -201,14 +237,19 @@ export function activate(context: vscode.ExtensionContext) {
   const configCommand = vscode.commands.registerCommand(
     "ai-commit.config",
     async () => {
-      await vscode.commands.executeCommand(
-        "workbench.action.openSettings",
-        "@ext:ai-auto-commit"
-      );
+      try {
+        await vscode.commands.executeCommand(
+          "workbench.action.openSettings",
+          "@ext:cotc-ai-auto-commit"
+        );
+      } catch (error) {
+        console.error("打开设置失败：", error);
+        vscode.window.showErrorMessage("打开设置失败，请手动打开设置面板");
+      }
     }
   );
 
-  context.subscriptions.push(generateCommand, configCommand);
+  context.subscriptions.push(generateCommand, generateRulesCommand, configCommand);
 }
 
 /**

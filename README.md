@@ -6,11 +6,11 @@
 
 - 🤖 **AI 生成提交信息**：自动分析代码变更，生成规范的提交信息
 - 🎯 **多种 AI 模型支持**：支持 OpenAI、Anthropic 等主流 AI 服务
-- ✏️ **自定义提示词**：支持自定义提示词模板，适配团队规范
+- 📋 **统一规则配置**：使用 `.cursorrules` 文件配置提交规则，Cursor 和 VS Code 通用
 - 🔒 **安全可靠**：支持配置 API 密钥，数据安全可控
-- 📝 **多种提交格式**：支持 Conventional Commits、简单格式等
-- ⚙️ **灵活配置**：支持全局和项目级别配置
-- ⚡ **快捷操作**：支持快捷键快速生成和提交
+- 📝 **Conventional Commits**：默认支持 Conventional Commits 格式
+- ⚙️ **灵活配置**：支持项目级别配置（通过 `.cursorrules` 文件）
+- ⚡ **快捷操作**：支持快捷键快速生成提交信息
 
 ## 安装
 
@@ -21,113 +21,156 @@
 3. 搜索 "COTC AI Auto Commit"
 4. 点击 "Install" 安装
 
-或者直接访问：[Marketplace 链接](https://marketplace.visualstudio.com/items?itemName=menmou.cotc-ai-auto-commit)
+## 快速开始
 
-## 配置
+### 在 Cursor 中使用（推荐，无需配置）
 
-### 在 Cursor 中使用（推荐）
-
-在 Cursor 中，插件会自动检测环境并尝试使用 Cursor 内置 AI，**无需配置 API 密钥**！
-
-只需：
 1. 安装插件
-2. 使用命令 `生成 AI 提交信息` 即可
+2. 在项目中暂存要提交的文件（`git add`）
+3. 按 `Ctrl+H Ctrl+H`（或 `Cmd+H Cmd+H`）生成提交信息
+4. 首次使用时，插件会提示生成 `.cursorrules` 文件
 
-如果 Cursor 内置 AI 不可用，插件会提示你配置其他 AI 提供商。
+**工作原理**：在 Cursor 环境中，插件会调用 Cursor 内置 AI，自动读取项目中的 `.cursorrules` 文件来生成符合规范的提交信息。
 
-### 在 VS Code 或其他编辑器中配置
+### 在 VS Code 中使用
 
-在 VS Code 设置中配置：
+VS Code 环境需要配置 API 密钥：
 
-#### 必填配置（使用 openai/anthropic/custom 时）
+1. 安装插件
+2. 打开设置（`Ctrl+,`），搜索 "COTC"
+3. 配置 `aiCommit.apiProvider`（选择 `openai` 或 `anthropic`）
+4. 配置 `aiCommit.apiKey`（输入你的 API 密钥）
+5. 使用 `Ctrl+H Ctrl+H` 生成提交信息
 
-- `aiCommit.apiProvider` **[必填]**：AI 服务提供商
-  - 可选值：`openai`、`anthropic`、`custom`
-  - 默认值：`openai`（如果未配置）
-- `aiCommit.apiKey` **[必填]**：API 密钥
-  - 使用 `openai` 或 `anthropic` 时必须配置
-  - 使用 `custom` 时根据自定义接口要求配置
+## 配置提交规则
 
-#### 可选配置
+### 使用 .cursorrules 文件（推荐）
 
-- `aiCommit.model` **[可选]**：模型名称
-  - 默认值：`gpt-3.5-turbo`
-  - 示例：`gpt-4`、`claude-3-opus` 等
-- `aiCommit.customPrompt` **[可选]**：自定义提示词
-  - 默认值：空（使用内置提示词模板）
-  - 用于自定义提交信息的生成规则
-- `aiCommit.commitType` **[可选]**：提交信息格式
-  - 可选值：`conventional`（Conventional Commits）、`simple`（简单格式）、`custom`（自定义）
-  - 默认值：`conventional`
+插件使用项目根目录的 `.cursorrules` 文件来定义提交信息格式。这个文件在 Cursor 和 VS Code 中都会被读取。
 
-#### 在 Cursor 中使用
+**生成规则文件**：
 
-在 Cursor 中，所有配置均为 **[非必填]**：
-- 插件会自动检测 Cursor 环境并使用内置 AI（`cursor` provider）
-- 无需配置 `apiProvider` 和 `apiKey` 即可使用
-- 如需使用其他 AI 提供商，可按照上述必填配置进行设置
+1. 打开命令面板（`Ctrl+Shift+P`）
+2. 运行 `COTC生成规则文件`
+3. 插件会在项目根目录创建 `.cursorrules` 文件
+4. 根据项目需要修改规则内容
 
-## 使用
+**默认规则示例**：
 
-### 基本使用流程
+```markdown
+# Git 提交信息规则
+
+## 格式
+<类型>(<范围>): <主题>
+
+## 类型
+- feat: 新功能
+- fix: 修复 bug
+- docs: 文档更新
+- style: 代码格式调整
+- refactor: 代码重构
+- test: 测试相关
+- chore: 构建/工具变动
+
+## 示例
+feat(用户模块): 添加用户登录功能
+```
+
+**优点**：
+- 规则跟着项目走，可以版本控制
+- 团队成员使用相同的规则
+- Cursor 和 VS Code 环境统一
+
+### API 配置（VS Code 用户）
+
+| 配置项 | 说明 | 默认值 |
+|--------|------|--------|
+| `aiCommit.apiProvider` | AI 服务提供商 | `cursor` |
+| `aiCommit.apiKey` | API 密钥 | 空 |
+| `aiCommit.model` | AI 模型名称 | `gpt-3.5-turbo` |
+| `aiCommit.maxTokens` | 最大生成 token 数 | `200` |
+| `aiCommit.temperature` | 生成温度（0-2） | `0.7` |
+| `aiCommit.apiEndpoint` | 自定义 API 端点 | 空 |
+| `aiCommit.customPrompt` | 自定义提示词（高级） | 空 |
+
+**配置示例**：
+
+```json
+{
+  "aiCommit.apiProvider": "openai",
+  "aiCommit.apiKey": "sk-你的OpenAI密钥",
+  "aiCommit.model": "gpt-4"
+}
+```
+
+## 使用方法
+
+### 基本流程
 
 1. **修改代码** - 在 Git 工作区中修改代码文件
 2. **暂存文件** - 使用 `git add` 暂存要提交的文件
-3. **生成提交信息** - 有两种方式：
-   - **方式1（仅生成）**：按快捷键 `Ctrl+H Ctrl+H`（Windows/Linux）或 `Cmd+H Cmd+H`（macOS）
-   - **方式2（生成并提交）**：按快捷键 `Ctrl+M Ctrl+M`（Windows/Linux）或 `Cmd+M Cmd+M`（macOS）
-   - 或打开命令面板（`Ctrl+Shift+P` / `Cmd+Shift+P`），运行：
-     - `生成 AI 提交信息` - 仅生成提交信息
-     - `生成 AI 提交信息并提交` - 生成后询问是否提交
-4. **确认提交**（使用方式2时）：
-   - "使用此提交信息" - 直接提交
-   - "编辑后提交" - 编辑后再提交
-   - "取消" - 不提交
+3. **生成提交信息** - 按 `Ctrl+H Ctrl+H`（或 `Cmd+H Cmd+H`）
 
-### 快捷键说明
+### 命令列表
 
-- `Ctrl+H Ctrl+H` / `Cmd+H Cmd+H`：生成 AI 提交信息（仅生成，不提交）
-- `Ctrl+M Ctrl+M` / `Cmd+M Cmd+M`：生成 AI 提交信息并询问是否提交
+| 命令 | 说明 |
+|------|------|
+| `COTC生成提交信息` | 生成 AI 提交信息 |
+| `COTC生成规则文件` | 生成 .cursorrules 文件 |
+| `配置 AI 提交` | 打开插件设置 |
 
-**自定义快捷键**：
+### 快捷键
 
-如果你想修改默认快捷键：
-
-1. 打开键盘快捷键设置：
-   - Windows/Linux: `Ctrl+K Ctrl+S`
-   - macOS: `Cmd+K Cmd+S`
-2. 搜索 "生成 AI 提交信息" 或 "ai-commit.generate"
-3. 双击该命令，按下你想要的新快捷键组合
-4. 按 `Enter` 确认
+| 快捷键 | 说明 |
+|--------|------|
+| `Ctrl+H Ctrl+H` / `Cmd+H Cmd+H` | 生成 AI 提交信息 |
 
 ## 常见问题
 
-### Q: 在 Cursor 中使用需要配置 API 密钥吗？
-A: 不需要！在 Cursor 中，插件会自动使用 Cursor 内置 AI，无需任何配置即可使用。
+### Q: 生成的提交信息是英文怎么办？
 
-### Q: 如何修改提交信息格式？
-A: 在设置中搜索 "AI Commit: Commit Type"，可以选择：
-- `conventional` - Conventional Commits 格式（推荐）
-- `simple` - 简单格式
-- `custom` - 自定义格式
+A: 检查项目中是否有 `.cursorrules` 文件。如果没有，运行 `COTC生成规则文件` 命令生成一个默认的中文规则文件。
+
+### Q: Cursor 和 VS Code 的区别是什么？
+
+| 环境 | API 密钥 | 规则来源 |
+|------|---------|---------|
+| Cursor | 不需要 | `.cursorrules` 文件 |
+| VS Code | 需要配置 | `.cursorrules` 文件 |
+
+### Q: 如何自定义提交格式？
+
+编辑项目根目录的 `.cursorrules` 文件，按照你的团队规范修改内容即可。
 
 ### Q: 支持哪些 AI 服务？
-A: 目前支持：
+
 - **Cursor 内置 AI**（在 Cursor 中使用，无需配置）
 - **OpenAI**（需要 API 密钥）
 - **Anthropic (Claude)**（需要 API 密钥）
 - **自定义 API**（需要配置 API 端点和密钥）
 
-### Q: 生成的提交信息不符合要求怎么办？
-A: 你可以：
-1. 使用 `Ctrl+M Ctrl+M` 生成后选择 "编辑后提交" 进行修改
-2. 在设置中配置自定义提示词（`AI Commit: Custom Prompt`）来调整生成规则
-
 ### Q: 快捷键冲突怎么办？
-A: 可以在键盘快捷键设置中修改：
+
+可以在键盘快捷键设置中修改：
 1. 按 `Ctrl+K Ctrl+S`（Windows/Linux）或 `Cmd+K Cmd+S`（macOS）
-2. 搜索 "COTC AI Auto Commit" 相关命令
+2. 搜索 "COTC" 相关命令
 3. 修改为你喜欢的快捷键组合
+
+## 工作流程图
+
+```
+用户触发命令
+    ↓
+检测 .cursorrules 文件
+    ├─ 存在 → 继续
+    └─ 不存在 → 提示生成
+    ↓
+检测运行环境
+    ├─ Cursor → 调用 Cursor 内置 AI（读取 .cursorrules）
+    └─ VS Code → 读取 .cursorrules + 调用配置的 API
+    ↓
+生成提交信息
+```
 
 ## 许可证
 

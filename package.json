@@ -2,7 +2,7 @@
   "name": "cotc-ai-auto-commit",
   "displayName": "COTC AI Auto Commit",
   "description": "使用 AI 自动生成高质量的 Git 提交信息",
-  "version": "0.0.2",
+  "version": "0.0.4",
   "publisher": "menmou",
   "icon": "src/assets/COTC_icon.png",
   "repository": {
@@ -23,7 +23,12 @@
     "commands": [
       {
         "command": "ai-commit.generate",
-        "title": "生成 AI 提交信息",
+        "title": "COTC生成提交信息",
+        "category": "AI Commit"
+      },
+      {
+        "command": "ai-commit.generateRules",
+        "title": "COTC生成规则文件",
         "category": "AI Commit"
       },
       {
@@ -85,16 +90,6 @@
           "minimum": 0,
           "maximum": 2,
           "description": "AI 生成温度（0-2）"
-        },
-        "aiCommit.commitType": {
-          "type": "string",
-          "enum": [
-            "conventional",
-            "simple",
-            "custom"
-          ],
-          "default": "conventional",
-          "description": "提交信息格式类型"
         }
       }
     }
