@@ -2,7 +2,7 @@
   "name": "cotc-ai-auto-commit",
   "displayName": "COTC AI Auto Commit",
   "description": "使用 AI 自动生成高质量的 Git 提交信息",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "publisher": "menmou",
   "icon": "src/assets/COTC_icon.png",
   "repository": {
@@ -17,6 +17,9 @@
   ],
   "activationEvents": [
     "onCommand:ai-commit.generate"
+  ],
+  "extensionDependencies": [
+    "vscode.git"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -53,26 +56,30 @@
           "enum": [
             "cursor",
             "openai",
-            "anthropic",
-            "custom"
+            "anthropic"
+          ],
+          "enumDescriptions": [
+            "Cursor 内置 AI（仅 Cursor 环境，无需填写地址和密钥）",
+            "OpenAI 兼容协议（OpenAI、DeepSeek、OpenRouter、硅基流动等聚合商）",
+            "Anthropic 兼容协议（Claude 官方或支持 Messages 协议的聚合商）"
           ],
           "default": "cursor",
-          "description": "AI 服务提供商。在 Cursor 中建议使用 'cursor' 以使用内置 AI（无需配置 API 密钥）"
+          "description": "API 协议类型。cursor 使用 Cursor 内置 AI；openai / anthropic 按对应协议请求你填写的模型服务地址"
         },
         "aiCommit.apiKey": {
           "type": "string",
           "default": "",
-          "description": "AI API 密钥（使用 cursor 提供商时不需要配置，其他提供商需要）"
+          "description": "模型服务 API 密钥（协议为 openai 或 anthropic 时必填）"
         },
         "aiCommit.apiEndpoint": {
           "type": "string",
           "default": "",
-          "description": "自定义 API 端点（仅当 apiProvider 为 custom 时使用）"
+          "description": "模型服务地址（Base URL），协议为 openai 或 anthropic 时必填。例如 https://api.openai.com/v1、https://openrouter.ai/api/v1。若未带完整路径，插件会按协议自动补全 /chat/completions 或 /messages"
         },
         "aiCommit.model": {
           "type": "string",
-          "default": "gpt-3.5-turbo",
-          "description": "AI 模型名称"
+          "default": "",
+          "description": "模型名称，由所用服务商提供，例如 gpt-4o、claude-3-5-sonnet-20241022、deepseek-chat"
         },
         "aiCommit.customPrompt": {
           "type": "string",
@@ -81,7 +88,7 @@
         },
         "aiCommit.maxTokens": {
           "type": "number",
-          "default": 200,
+          "default": 1024,
           "description": "最大生成 token 数"
         },
         "aiCommit.temperature": {
