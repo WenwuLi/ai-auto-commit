@@ -153,10 +153,11 @@ export function activate(context: vscode.ExtensionContext) {
 
               progress.report({ increment: 50, message: "生成提示词..." });
 
-              // 生成提示词
-              const prompt = promptService.generatePrompt(
+              const systemPrompt = promptService.getSystemPrompt(
+                cursorRulesContent || undefined
+              );
+              const prompt = promptService.generateUserPrompt(
                 diff,
-                cursorRulesContent || undefined,
                 customPrompt || undefined
               );
 
@@ -170,6 +171,7 @@ export function activate(context: vscode.ExtensionContext) {
                   model: model,
                   maxTokens: config.get<number>("maxTokens", 1024),
                   temperature: config.get<number>("temperature", 0.7),
+                  systemPrompt,
                 });
 
                 if (commitMessage) {

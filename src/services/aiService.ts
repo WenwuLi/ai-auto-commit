@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import axios, { AxiosInstance } from 'axios';
+import { DEFAULT_COMMIT_RULES } from '../constants/defaultCommitRules';
 
 /** API 协议类型（cursor 为 Cursor 内置能力，不走 HTTP） */
 export type AIProtocol = 'openai' | 'anthropic' | 'cursor';
@@ -14,6 +15,7 @@ export interface AIServiceConfig {
   model: string;
   maxTokens: number;
   temperature: number;
+  systemPrompt?: string;
 }
 
 /**
@@ -135,6 +137,11 @@ export class AIService {
     }
   }
 
+  private getSystemPrompt(config: AIServiceConfig): string {
+    const prompt = (config.systemPrompt || '').trim();
+    return prompt || DEFAULT_COMMIT_RULES.trim();
+  }
+
   /**
    * 按 OpenAI 兼容协议请求（官方、中转、聚合商均可）
    */
@@ -145,6 +152,10 @@ export class AIService {
       {
         model: config.model,
         messages: [
+          {
+            role: 'system',
+            content: this.getSystemPrompt(config),
+          },
           {
             role: 'user',
             content: prompt,
@@ -201,7 +212,7 @@ export class AIService {
         model: config.model,
         max_tokens: config.maxTokens,
         temperature: config.temperature,
-        system: '根据用户消息中已提供的 Git diff 生成提交信息。只输出提交信息，不要寒暄、不要索取 diff。',
+        system: this.getSystemPrompt(config),
         messages: [
           {
             role: 'user',
