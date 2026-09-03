@@ -5,7 +5,7 @@
 ## 功能特性
 
 - 🤖 **AI 生成提交信息**：自动分析代码变更，生成规范的提交信息
-- 🎯 **多种 AI 模型支持**：支持 OpenAI、Anthropic 等主流 AI 服务
+- 🎯 **协议兼容调用**：支持 OpenAI / Anthropic 兼容协议，可填写任意服务商或聚合商地址
 - 📋 **统一规则配置**：使用 `.cursorrules` 文件配置提交规则，Cursor 和 VS Code 通用
 - 🔒 **安全可靠**：支持配置 API 密钥，数据安全可控
 - 📝 **Conventional Commits**：默认支持 Conventional Commits 格式
@@ -34,13 +34,14 @@
 
 ### 在 VS Code 中使用
 
-VS Code 环境需要配置 API 密钥：
+VS Code 环境需要按协议自行填写模型服务信息（官方、中转、聚合商均可）：
 
 1. 安装插件
 2. 打开设置（`Ctrl+,`），搜索 "COTC"
-3. 配置 `aiCommit.apiProvider`（选择 `openai` 或 `anthropic`）
-4. 配置 `aiCommit.apiKey`（输入你的 API 密钥）
-5. 使用 `Ctrl+H Ctrl+H` 生成提交信息
+3. 配置 `aiCommit.apiProvider`：选择 `openai` 或 `anthropic`（表示协议，不是固定厂商）
+4. 配置 `aiCommit.apiEndpoint`：模型服务 Base URL（如 `https://api.openai.com/v1`）
+5. 配置 `aiCommit.apiKey` 与 `aiCommit.model`
+6. 使用 `Ctrl+H Ctrl+H` 生成提交信息
 
 ## 配置提交规则
 
@@ -85,23 +86,26 @@ feat(用户模块): 添加用户登录功能
 
 | 配置项 | 说明 | 默认值 |
 |--------|------|--------|
-| `aiCommit.apiProvider` | AI 服务提供商 | `cursor` |
+| `aiCommit.apiProvider` | API 协议：`cursor` / `openai` / `anthropic` | `cursor` |
+| `aiCommit.apiEndpoint` | 模型服务地址（Base URL） | 空 |
 | `aiCommit.apiKey` | API 密钥 | 空 |
-| `aiCommit.model` | AI 模型名称 | `gpt-3.5-turbo` |
+| `aiCommit.model` | 模型名称 | 空 |
 | `aiCommit.maxTokens` | 最大生成 token 数 | `200` |
 | `aiCommit.temperature` | 生成温度（0-2） | `0.7` |
-| `aiCommit.apiEndpoint` | 自定义 API 端点 | 空 |
 | `aiCommit.customPrompt` | 自定义提示词（高级） | 空 |
 
-**配置示例**：
+**配置示例（OpenAI 兼容协议，可用官方或聚合商）**：
 
 ```json
 {
   "aiCommit.apiProvider": "openai",
-  "aiCommit.apiKey": "sk-你的OpenAI密钥",
-  "aiCommit.model": "gpt-4"
+  "aiCommit.apiEndpoint": "https://api.openai.com/v1",
+  "aiCommit.apiKey": "sk-你的密钥",
+  "aiCommit.model": "gpt-4o"
 }
 ```
+
+填写完整路径（如 `.../v1/chat/completions`）时插件会原样请求；只填 Base URL 时会按协议自动补全 `/chat/completions` 或 `/messages`。
 
 ## 使用方法
 
@@ -135,10 +139,10 @@ A: 检查项目中是否有 `.cursorrules` 文件。如果没有，运行 `COTC�
 
 ### Q: Cursor 和 VS Code 的区别是什么？
 
-| 环境 | API 密钥 | 规则来源 |
+| 环境 | 调用方式 | 规则来源 |
 |------|---------|---------|
-| Cursor | 不需要 | `.cursorrules` 文件 |
-| VS Code | 需要配置 | `.cursorrules` 文件 |
+| Cursor | 默认用内置 AI，无需填写地址 | `.cursorrules` 文件 |
+| VS Code | 按协议填写地址、密钥、模型名 | `.cursorrules` 文件 |
 
 ### Q: 如何自定义提交格式？
 
@@ -147,9 +151,8 @@ A: 检查项目中是否有 `.cursorrules` 文件。如果没有，运行 `COTC�
 ### Q: 支持哪些 AI 服务？
 
 - **Cursor 内置 AI**（在 Cursor 中使用，无需配置）
-- **OpenAI**（需要 API 密钥）
-- **Anthropic (Claude)**（需要 API 密钥）
-- **自定义 API**（需要配置 API 端点和密钥）
+- **OpenAI 兼容协议**：填写服务地址、密钥、模型名即可（官方、DeepSeek、OpenRouter、硅基流动等）
+- **Anthropic 兼容协议**：填写支持 Messages 协议的服务地址、密钥、模型名
 
 ### Q: 快捷键冲突怎么办？
 
