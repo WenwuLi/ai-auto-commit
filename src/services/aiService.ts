@@ -1,11 +1,14 @@
 import * as vscode from 'vscode';
 import axios, { AxiosInstance } from 'axios';
 
+/** API 协议类型（cursor 为 Cursor 内置能力，不走 HTTP） */
+export type AIProtocol = 'openai' | 'anthropic' | 'cursor';
+
 /**
  * AI 服务配置接口
  */
 export interface AIServiceConfig {
-  provider: 'openai' | 'anthropic' | 'custom' | 'cursor';
+  provider: AIProtocol;
   apiKey: string;
   apiEndpoint?: string;
   model: string;
@@ -56,7 +59,7 @@ export class AIService {
     if (config.provider === 'cursor') {
       // 如果不在 Cursor 环境中，提示错误
       if (!this.isCursor) {
-        throw new Error('当前不在 Cursor 环境中，无法使用 Cursor AI。请切换到 Cursor 或配置其他 AI 提供商。');
+        throw new Error('当前不在 Cursor 环境中，无法使用 Cursor AI。请切换到 Cursor 或配置 OpenAI / Anthropic 协议。');
       }
       
       // Cursor 环境：直接执行内置命令
@@ -64,27 +67,57 @@ export class AIService {
       return this.callCursorBuiltin();
     }
 
-    // 如果使用其他提供商，需要 API 密钥
     if (!config.apiKey) {
       throw new Error('未配置 API 密钥，请在设置中配置 aiCommit.apiKey');
     }
 
-    // 使用配置的 API 提供商
+    if (!config.model?.trim()) {
+      throw new Error('未配置模型名称，请在设置中配置 aiCommit.model');
+    }
+
     try {
       switch (config.provider) {
         case 'openai':
           return await this.callOpenAI(prompt, config);
         case 'anthropic':
           return await this.callAnthropic(prompt, config);
-        case 'custom':
-          return await this.callCustomAPI(prompt, config);
         default:
-          throw new Error(`不支持的 AI 提供商：${config.provider}`);
+          throw new Error(`不支持的 API 协议：${config.provider}`);
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '未知错误';
       throw new Error(`AI 服务调用失败：${errorMessage}`);
     }
+  }
+
+  /**
+   * 根据协议拼接请求地址。
+   * 用户填写服务商/聚合商 Base URL（如 https://api.openai.com/v1），
+   * 若已包含完整路径则原样使用。
+   */
+  private resolveApiUrl(config: AIServiceConfig): string {
+    const endpoint = (config.apiEndpoint || '').trim();
+    if (!endpoint) {
+      throw new Error('未配置模型服务地址，请在设置中配置 aiCommit.apiEndpoint');
+    }
+
+    const base = endpoint.replace(/\/+$/, '');
+
+    if (config.provider === 'openai') {
+      if (/\/chat\/completions$/i.test(base)) {
+        return base;
+      }
+      return `${base}/chat/completions`;
+    }
+
+    if (config.provider === 'anthropic') {
+      if (/\/v1\/messages$/i.test(base) || /\/messages$/i.test(base)) {
+        return base;
+      }
+      return `${base}/messages`;
+    }
+
+    throw new Error(`不支持的 API 协议：${config.provider}`);
   }
 
   /**
@@ -103,18 +136,15 @@ export class AIService {
   }
 
   /**
-   * 调用 OpenAI API
+   * 按 OpenAI 兼容协议请求（官方、中转、聚合商均可）
    */
   private async callOpenAI(prompt: string, config: AIServiceConfig): Promise<string | null> {
+    const url = this.resolveApiUrl(config);
     const response = await this.axiosInstance.post(
-      'https://api.openai.com/v1/chat/completions',
+      url,
       {
         model: config.model,
         messages: [
-          {
-            role: 'system',
-            content: '你是一个专业的 Git 提交信息生成助手，能够根据代码变更生成清晰、规范的提交信息。',
-          },
           {
             role: 'user',
             content: prompt,
@@ -131,21 +161,47 @@ export class AIService {
       }
     );
 
-    const message = response.data.choices?.[0]?.message?.content;
+    const message = this.extractOpenAIContent(response.data);
     return message ? message.trim() : null;
   }
 
   /**
-   * 调用 Anthropic (Claude) API
+   * 兼容 string / 分段 content 等 OpenAI 兼容响应
+   */
+  private extractOpenAIContent(data: any): string | null {
+    const content = data?.choices?.[0]?.message?.content;
+    if (typeof content === 'string' && content.trim()) {
+      return content;
+    }
+    if (Array.isArray(content)) {
+      const text = content
+        .map((part: { text?: string; content?: string }) => part?.text || part?.content || '')
+        .join('')
+        .trim();
+      if (text) {
+        return text;
+      }
+    }
+    const fallback =
+      data?.choices?.[0]?.text ||
+      data?.content?.[0]?.text ||
+      data?.text ||
+      data?.message;
+    return fallback ? String(fallback) : null;
+  }
+
+  /**
+   * 按 Anthropic Messages 兼容协议请求（官方或支持该协议的聚合商）
    */
   private async callAnthropic(prompt: string, config: AIServiceConfig): Promise<string | null> {
+    const url = this.resolveApiUrl(config);
     const response = await this.axiosInstance.post(
-      'https://api.anthropic.com/v1/messages',
+      url,
       {
         model: config.model,
         max_tokens: config.maxTokens,
         temperature: config.temperature,
-        system: '你是一个专业的 Git 提交信息生成助手，能够根据代码变更生成清晰、规范的提交信息。',
+        system: '根据用户消息中已提供的 Git diff 生成提交信息。只输出提交信息，不要寒暄、不要索取 diff。',
         messages: [
           {
             role: 'user',
@@ -163,49 +219,6 @@ export class AIService {
     );
 
     const content = response.data.content?.[0]?.text;
-    return content ? content.trim() : null;
-  }
-
-  /**
-   * 调用自定义 API
-   */
-  private async callCustomAPI(prompt: string, config: AIServiceConfig): Promise<string | null> {
-    if (!config.apiEndpoint) {
-      throw new Error('自定义 API 需要配置 apiEndpoint');
-    }
-
-    const response = await this.axiosInstance.post(
-      config.apiEndpoint,
-      {
-        model: config.model,
-        messages: [
-          {
-            role: 'system',
-            content: '你是一个专业的 Git 提交信息生成助手，能够根据代码变更生成清晰、规范的提交信息。',
-          },
-          {
-            role: 'user',
-            content: prompt,
-          },
-        ],
-        max_tokens: config.maxTokens,
-        temperature: config.temperature,
-      },
-      {
-        headers: {
-          'Authorization': `Bearer ${config.apiKey}`,
-          'Content-Type': 'application/json',
-        },
-      }
-    );
-
-    // 尝试多种可能的响应格式
-    const message =
-      response.data.choices?.[0]?.message?.content ||
-      response.data.content?.[0]?.text ||
-      response.data.text ||
-      response.data.message;
-
-    return message ? message.trim() : null;
+    return content ? String(content).trim() : null;
   }
 }

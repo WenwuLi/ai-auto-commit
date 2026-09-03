@@ -43,9 +43,10 @@ export class GitService {
     }
 
     try {
-      const { stdout } = await execAsync('git diff --cached', {
+      const { stdout } = await execAsync('git diff --cached --no-ext-diff', {
         cwd: this.workspaceRoot,
         encoding: 'utf-8',
+        maxBuffer: 10 * 1024 * 1024,
       });
       return stdout.trim();
     } catch (error) {
@@ -62,9 +63,10 @@ export class GitService {
     }
 
     try {
-      const { stdout } = await execAsync('git diff HEAD', {
+      const { stdout } = await execAsync('git diff HEAD --no-ext-diff', {
         cwd: this.workspaceRoot,
         encoding: 'utf-8',
+        maxBuffer: 10 * 1024 * 1024,
       });
       return stdout.trim();
     } catch (error) {

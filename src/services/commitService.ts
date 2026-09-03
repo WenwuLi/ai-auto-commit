@@ -45,6 +45,46 @@ export class CommitService {
   }
 
   /**
+   * 将提交信息写入 Source Control 输入框并打开 SCM 视图
+   */
+  async applyToScmInputBox(message: string): Promise<boolean> {
+    const formatted = this.formatCommitMessage(message);
+    if (!formatted) {
+      return false;
+    }
+
+    const gitExtension = vscode.extensions.getExtension('vscode.git');
+    if (!gitExtension) {
+      return false;
+    }
+
+    const exports = gitExtension.isActive
+      ? gitExtension.exports
+      : await gitExtension.activate();
+    const api = exports?.getAPI?.(1);
+    if (!api || !api.repositories?.length) {
+      return false;
+    }
+
+    const folderUri = vscode.workspace.workspaceFolders?.[0]?.uri;
+    const repo =
+      (folderUri &&
+        api.repositories.find(
+          (item: { rootUri: vscode.Uri }) =>
+            item.rootUri.fsPath === folderUri.fsPath
+        )) ||
+      api.repositories[0];
+
+    if (!repo?.inputBox) {
+      return false;
+    }
+
+    repo.inputBox.value = formatted;
+    await vscode.commands.executeCommand('workbench.view.scm');
+    return true;
+  }
+
+  /**
    * 执行 Git 提交
    */
   async commit(message: string): Promise<void> {

@@ -1,30 +1,24 @@
 import * as vscode from "vscode";
 import { GitService } from "./services/gitService";
-import { AIService, isCursorEnvironment } from "./services/aiService";
+import { AIService, AIProtocol, isCursorEnvironment } from "./services/aiService";
 import { PromptService } from "./services/promptService";
 import { CursorRulesService } from "./services/cursorRulesService";
+import { CommitService } from "./services/commitService";
 
 /**
- * 验证并获取 API Provider 配置
+ * 验证并获取 API 协议配置
  */
-function getApiProvider(
-  config: vscode.WorkspaceConfiguration
-): "openai" | "anthropic" | "custom" | "cursor" {
+function getApiProvider(config: vscode.WorkspaceConfiguration): AIProtocol {
   const value = config.get<string>("apiProvider", "");
-  const validProviders: Array<"openai" | "anthropic" | "custom" | "cursor"> = [
-    "openai",
-    "anthropic",
-    "custom",
-    "cursor",
-  ];
+  const validProtocols: AIProtocol[] = ["openai", "anthropic", "cursor"];
 
-  // 如果在 Cursor 环境中且未配置 provider，默认使用 cursor
+  // 如果在 Cursor 环境中且未配置协议，默认使用 cursor
   if (isCursorEnvironment() && (!value || value === "")) {
     return "cursor";
   }
 
-  return validProviders.includes(value as any)
-    ? (value as "openai" | "anthropic" | "custom" | "cursor")
+  return validProtocols.includes(value as AIProtocol)
+    ? (value as AIProtocol)
     : "openai";
 }
 
@@ -39,6 +33,7 @@ export function activate(context: vscode.ExtensionContext) {
   const aiService = new AIService();
   const promptService = new PromptService();
   const cursorRulesService = new CursorRulesService();
+  const commitService = new CommitService();
 
   // 注册命令：生成 AI 提交信息
   const generateCommand = vscode.commands.registerCommand(
@@ -63,7 +58,7 @@ export function activate(context: vscode.ExtensionContext) {
 
             progress.report({ increment: 10, message: "获取代码变更..." });
 
-            // 2. 获取 Git diff
+            // 2. 获取已暂存的 Git diff
             const diff = await gitService.getStagedDiff();
             if (!diff || diff.trim().length === 0) {
               vscode.window.showWarningMessage(
@@ -93,12 +88,13 @@ export function activate(context: vscode.ExtensionContext) {
             const config = vscode.workspace.getConfiguration("aiCommit");
             const apiProvider = getApiProvider(config);
             const apiKey = config.get<string>("apiKey", "");
+            const apiEndpoint = config.get<string>("apiEndpoint", "");
+            const model = config.get<string>("model", "");
             const customPrompt = config.get<string>("customPrompt", "");
 
             // 5. 根据环境选择处理方式
             const isCursor = isCursorEnvironment();
-            const useCursorBuiltin = isCursor && 
-              (apiProvider === "cursor" || (!apiKey && apiProvider !== "openai" && apiProvider !== "anthropic" && apiProvider !== "custom"));
+            const useCursorBuiltin = isCursor && apiProvider === "cursor";
 
             if (useCursorBuiltin) {
               // Cursor 环境：直接调用 Cursor 内置功能
@@ -125,10 +121,27 @@ export function activate(context: vscode.ExtensionContext) {
                 return;
               }
             } else {
-              // VS Code 环境或配置了其他 API：使用 API 调用
-              if (!apiKey) {
+              if (apiProvider === "cursor") {
                 vscode.window.showErrorMessage(
-                  "请先配置 API 密钥。打开设置，搜索 'COTC' 进行配置。"
+                  "当前不在 Cursor 环境。请将 aiCommit.apiProvider 设为 openai 或 anthropic，并填写服务地址、密钥和模型名称。"
+                );
+                return;
+              }
+
+              // VS Code 环境或显式选择 openai / anthropic 协议：按协议调用用户配置的服务
+              const missing: string[] = [];
+              if (!apiEndpoint.trim()) {
+                missing.push("模型服务地址 (apiEndpoint)");
+              }
+              if (!apiKey.trim()) {
+                missing.push("API 密钥 (apiKey)");
+              }
+              if (!model.trim()) {
+                missing.push("模型名称 (model)");
+              }
+              if (missing.length > 0) {
+                vscode.window.showErrorMessage(
+                  `请先在设置中配置：${missing.join("、")}。搜索 'COTC' 打开插件设置。`
                 );
                 return;
               }
@@ -153,23 +166,25 @@ export function activate(context: vscode.ExtensionContext) {
                 const commitMessage = await aiService.generateCommitMessage(prompt, {
                   provider: apiProvider,
                   apiKey: apiKey,
-                  apiEndpoint: config.get<string>("apiEndpoint", ""),
-                  model: config.get<string>("model", "gpt-3.5-turbo"),
-                  maxTokens: config.get<number>("maxTokens", 200),
+                  apiEndpoint: apiEndpoint,
+                  model: model,
+                  maxTokens: config.get<number>("maxTokens", 1024),
                   temperature: config.get<number>("temperature", 0.7),
                 });
 
                 if (commitMessage) {
-                  // 显示生成的提交信息
-                  const action = await vscode.window.showInformationMessage(
-                    `生成的提交信息：\n${commitMessage}`,
-                    "复制到剪贴板",
-                    "取消"
-                  );
-
-                  if (action === "复制到剪贴板") {
-                    await vscode.env.clipboard.writeText(commitMessage);
-                    vscode.window.showInformationMessage("提交信息已复制到剪贴板");
+                  const applied = await commitService.applyToScmInputBox(commitMessage);
+                  if (applied) {
+                    void vscode.window.showInformationMessage(
+                      "已填入源代码管理的提交信息框。"
+                    );
+                  } else {
+                    await vscode.env.clipboard.writeText(
+                      commitService.formatCommitMessage(commitMessage)
+                    );
+                    void vscode.window.showWarningMessage(
+                      "无法写入提交框，已复制到剪贴板，请手动粘贴。"
+                    );
                   }
                 } else {
                   vscode.window.showWarningMessage("AI 未能生成提交信息，请重试");
