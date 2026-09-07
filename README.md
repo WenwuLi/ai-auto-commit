@@ -129,29 +129,35 @@ feat(用户模块): 添加用户登录功能
 |--------|------|
 | `Ctrl+H Ctrl+H` / `Cmd+H Cmd+H` | 生成 AI 提交信息 |
 
+### VSCode
+![使用步骤](https://cotc-service.oss-cn-guangzhou.aliyuncs.com/auto_commit/PixPin_88888.gif)
+
+### Cursor
 ![生成 AI 提交信息](https://i.mji.rip/2026/03/22/47500e175a5c32869e265602ca782181.gif)
 
 ## 常见问题
 
 ### Q: 生成的提交信息是英文怎么办？
 
-A: 检查项目中是否有 `.cursorrules` 文件。如果没有，运行 `COTC生成规则文件` 命令生成一个默认的中文规则文件。
+A: Cursor环境：检查项目中是否有 `.cursorrules` 文件。如果没有，运行 `COTC生成规则文件` 命令生成一个默认的中文规则文件。
+B: VsCode环境：打开VSCode设置，搜索 Custom Prompt，填写自定义系统提示词，或者清空使用默认的提示词。
 
 ### Q: Cursor 和 VS Code 的区别是什么？
 
 | 环境 | 调用方式 | 规则来源 |
 |------|---------|---------|
 | Cursor | 默认用内置 AI，无需填写地址 | `.cursorrules` 文件 |
-| VS Code | 按协议填写地址、密钥、模型名 | `.cursorrules` 文件 |
+| VS Code | 选择对应的协议类型、填写地址、密钥、模型名 | 内置规则/自定义填写规则 |
 
 ### Q: 如何自定义提交格式？
 
-编辑项目根目录的 `.cursorrules` 文件，按照你的团队规范修改内容即可。
+A: Cursor环境：编辑项目根目录的 `.cursorrules` 文件，按照你的团队规范修改内容即可。
+B: VsCode环境：打开VSCode设置，搜索 Custom Prompt，填写自定义系统提示词。
 
 ### Q: 支持哪些 AI 服务？
 
 - **Cursor 内置 AI**（在 Cursor 中使用，无需配置）
-- **OpenAI 兼容协议**：填写服务地址、密钥、模型名即可（官方、DeepSeek、OpenRouter、硅基流动等）
+- **OpenAI 兼容协议**：填写服务地址、密钥、模型名即可（官方、DeepSeek、OpenRouter、硅基流动、阿里百炼等）
 - **Anthropic 兼容协议**：填写支持 Messages 协议的服务地址、密钥、模型名
 
 ### Q: 快捷键冲突怎么办？
