@@ -130,7 +130,8 @@ feat(用户模块): 添加用户登录功能
 | `Ctrl+H Ctrl+H` / `Cmd+H Cmd+H` | 生成 AI 提交信息 |
 
 ### VSCode
-![使用步骤](https://cotc-service.oss-cn-guangzhou.aliyuncs.com/auto_commit/PixPin_88888.gif)
+![使用步骤](https://raw.githubusercontent.com/WenwuLi/ai-auto-commit/master/docs/images/PixPin_88888.gif
+)
 
 ### Cursor
 ![生成 AI 提交信息](https://i.mji.rip/2026/03/22/47500e175a5c32869e265602ca782181.gif)
