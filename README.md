@@ -38,9 +38,9 @@ VS Code 环境需要按协议自行填写模型服务信息（官方、中转、
 
 1. 安装插件
 2. 打开设置（`Ctrl+,`），搜索 "COTC"
-3. 配置 `aiCommit.apiProvider`：选择 `openai` 或 `anthropic`（表示协议，不是固定厂商）
-4. 配置 `aiCommit.apiEndpoint`：模型服务 Base URL（如 `https://api.openai.com/v1`）
-5. 配置 `aiCommit.apiKey` 与 `aiCommit.model`
+3. 配置 `cotc.apiProvider`：选择 `openai` 或 `anthropic`（表示协议，不是固定厂商）
+4. 配置 `cotc.apiEndpoint`：模型服务 Base URL（如 `https://api.openai.com/v1`）
+5. 配置 `cotc.apiKey` 与 `cotc.model`
 6. 使用 `Ctrl+H Ctrl+H` 生成提交信息
 
 ## 配置提交规则
@@ -86,22 +86,22 @@ feat(用户模块): 添加用户登录功能
 
 | 配置项 | 说明 | 默认值 |
 |--------|------|--------|
-| `aiCommit.apiProvider` | API 协议：`cursor` / `openai` / `anthropic` | `cursor` |
-| `aiCommit.apiEndpoint` | 模型服务地址（Base URL） | 空 |
-| `aiCommit.apiKey` | API 密钥 | 空 |
-| `aiCommit.model` | 模型名称 | 空 |
-| `aiCommit.maxTokens` | 最大生成 token 数 | `200` |
-| `aiCommit.temperature` | 生成温度（0-2） | `0.7` |
-| `aiCommit.customPrompt` | 自定义提示词（高级） | 空 |
+| `cotc.apiProvider` | API 协议：`cursor` / `openai` / `anthropic` | `cursor` |
+| `cotc.apiEndpoint` | 模型服务地址（Base URL） | 空 |
+| `cotc.apiKey` | API 密钥 | 空 |
+| `cotc.model` | 模型名称 | 空 |
+| `cotc.maxTokens` | 最大生成 token 数 | `200` |
+| `cotc.temperature` | 生成温度（0-2） | `0.7` |
+| `cotc.customPrompt` | 自定义提示词（高级） | 空 |
 
 **配置示例（OpenAI 兼容协议，可用官方或聚合商）**：
 
 ```json
 {
-  "aiCommit.apiProvider": "openai",
-  "aiCommit.apiEndpoint": "https://api.openai.com/v1",
-  "aiCommit.apiKey": "sk-你的密钥",
-  "aiCommit.model": "gpt-4o"
+  "cotc.apiProvider": "openai",
+  "cotc.apiEndpoint": "https://api.openai.com/v1",
+  "cotc.apiKey": "sk-你的密钥",
+  "cotc.model": "gpt-4o"
 }
 ```
 

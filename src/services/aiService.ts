@@ -70,11 +70,11 @@ export class AIService {
     }
 
     if (!config.apiKey) {
-      throw new Error('未配置 API 密钥，请在设置中配置 aiCommit.apiKey');
+      throw new Error('未配置 API 密钥，请在设置中配置 cotc.apiKey');
     }
 
     if (!config.model?.trim()) {
-      throw new Error('未配置模型名称，请在设置中配置 aiCommit.model');
+      throw new Error('未配置模型名称，请在设置中配置 cotc.model');
     }
 
     try {
@@ -100,7 +100,7 @@ export class AIService {
   private resolveApiUrl(config: AIServiceConfig): string {
     const endpoint = (config.apiEndpoint || '').trim();
     if (!endpoint) {
-      throw new Error('未配置模型服务地址，请在设置中配置 aiCommit.apiEndpoint');
+      throw new Error('未配置模型服务地址，请在设置中配置 cotc.apiEndpoint');
     }
 
     const base = endpoint.replace(/\/+$/, '');

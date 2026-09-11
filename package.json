@@ -2,7 +2,7 @@
   "name": "cotc-ai-auto-commit",
   "displayName": "COTC AI Auto Commit",
   "description": "使用 AI 自动生成高质量的 Git 提交信息",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "publisher": "menmou",
   "icon": "src/assets/COTC_icon.png",
   "repository": {
@@ -49,9 +49,9 @@
       }
     ],
     "configuration": {
-      "title": "AI Auto Commit",
+      "title": "COTC AI Auto Commit",
       "properties": {
-        "aiCommit.apiProvider": {
+        "cotc.apiProvider": {
           "type": "string",
           "enum": [
             "cursor",
@@ -66,32 +66,32 @@
           "default": "cursor",
           "description": "API 协议类型。cursor 使用 Cursor 内置 AI；openai / anthropic 按对应协议请求你填写的模型服务地址"
         },
-        "aiCommit.apiKey": {
+        "cotc.apiKey": {
           "type": "string",
           "default": "",
           "description": "模型服务 API 密钥（协议为 openai 或 anthropic 时必填）"
         },
-        "aiCommit.apiEndpoint": {
+        "cotc.apiEndpoint": {
           "type": "string",
           "default": "",
           "description": "模型服务地址（Base URL），协议为 openai 或 anthropic 时必填。例如 https://api.openai.com/v1、https://openrouter.ai/api/v1。若未带完整路径，插件会按协议自动补全 /chat/completions 或 /messages"
         },
-        "aiCommit.model": {
+        "cotc.model": {
           "type": "string",
           "default": "",
           "description": "模型名称，由所用服务商提供，例如 gpt-4o、claude-3-5-sonnet-20241022、deepseek-chat"
         },
-        "aiCommit.customPrompt": {
+        "cotc.customPrompt": {
           "type": "string",
           "default": "",
           "description": "自定义提示词模板（留空使用默认）"
         },
-        "aiCommit.maxTokens": {
+        "cotc.maxTokens": {
           "type": "number",
           "default": 1024,
           "description": "最大生成 token 数"
         },
-        "aiCommit.temperature": {
+        "cotc.temperature": {
           "type": "number",
           "default": 0.7,
           "minimum": 0,

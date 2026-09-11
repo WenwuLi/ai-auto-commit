@@ -5,11 +5,36 @@ import { PromptService } from "./services/promptService";
 import { CursorRulesService } from "./services/cursorRulesService";
 import { CommitService } from "./services/commitService";
 
+const CONFIG_SECTION = "cotc";
+const LEGACY_CONFIG_SECTION = "aiCommit";
+
+function isExplicitlySet<T>(inspect: { globalValue?: T; workspaceValue?: T; workspaceFolderValue?: T } | undefined): boolean {
+  return (
+    inspect?.globalValue !== undefined ||
+    inspect?.workspaceValue !== undefined ||
+    inspect?.workspaceFolderValue !== undefined
+  );
+}
+
+function readSetting<T>(key: string, defaultValue: T): T {
+  const current = vscode.workspace.getConfiguration(CONFIG_SECTION);
+  if (isExplicitlySet(current.inspect<T>(key))) {
+    return current.get<T>(key, defaultValue) as T;
+  }
+
+  const legacy = vscode.workspace.getConfiguration(LEGACY_CONFIG_SECTION);
+  if (isExplicitlySet(legacy.inspect<T>(key))) {
+    return legacy.get<T>(key, defaultValue) as T;
+  }
+
+  return current.get<T>(key, defaultValue) as T;
+}
+
 /**
  * 验证并获取 API 协议配置
  */
-function getApiProvider(config: vscode.WorkspaceConfiguration): AIProtocol {
-  const value = config.get<string>("apiProvider", "");
+function getApiProvider(): AIProtocol {
+  const value = readSetting<string>("apiProvider", "");
   const validProtocols: AIProtocol[] = ["openai", "anthropic", "cursor"];
 
   // 如果在 Cursor 环境中且未配置协议，默认使用 cursor
@@ -84,13 +109,12 @@ export function activate(context: vscode.ExtensionContext) {
 
             progress.report({ increment: 30, message: "准备生成提交信息..." });
 
-            // 4. 获取配置
-            const config = vscode.workspace.getConfiguration("aiCommit");
-            const apiProvider = getApiProvider(config);
-            const apiKey = config.get<string>("apiKey", "");
-            const apiEndpoint = config.get<string>("apiEndpoint", "");
-            const model = config.get<string>("model", "");
-            const customPrompt = config.get<string>("customPrompt", "");
+            // 4. 获取配置（优先 cotc.*，兼容旧版 aiCommit.*）
+            const apiProvider = getApiProvider();
+            const apiKey = readSetting<string>("apiKey", "");
+            const apiEndpoint = readSetting<string>("apiEndpoint", "");
+            const model = readSetting<string>("model", "");
+            const customPrompt = readSetting<string>("customPrompt", "");
 
             // 5. 根据环境选择处理方式
             const isCursor = isCursorEnvironment();
@@ -123,7 +147,7 @@ export function activate(context: vscode.ExtensionContext) {
             } else {
               if (apiProvider === "cursor") {
                 vscode.window.showErrorMessage(
-                  "当前不在 Cursor 环境。请将 aiCommit.apiProvider 设为 openai 或 anthropic，并填写服务地址、密钥和模型名称。"
+                  "当前不在 Cursor 环境。请将 cotc.apiProvider 设为 openai 或 anthropic，并填写服务地址、密钥和模型名称。"
                 );
                 return;
               }
@@ -169,8 +193,8 @@ export function activate(context: vscode.ExtensionContext) {
                   apiKey: apiKey,
                   apiEndpoint: apiEndpoint,
                   model: model,
-                  maxTokens: config.get<number>("maxTokens", 1024),
-                  temperature: config.get<number>("temperature", 0.7),
+                  maxTokens: readSetting<number>("maxTokens", 1024),
+                  temperature: readSetting<number>("temperature", 0.7),
                   systemPrompt,
                 });
 
